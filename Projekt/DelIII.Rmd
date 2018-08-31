@@ -1,0 +1,92 @@
+---
+title: "Del III: Bayesiansk statistik."
+output: html_document
+---
+
+```{r, code = readLines("funktioner.R"), echo = FALSE}
+```
+
+I den här uppgiften kommer vi göra en Bayesiansk analys av vår logistiska regressionsmodell, men först en sista kontrollräkning av Rs modellutskrift:
+
+```{r, echo = TRUE}
+load("proj_data.Rdata")
+modell <- glm(Resultat ~ Alder + Kon + Utbildare, 
+              data = data_individ,
+              family = "binomial")
+summary(modell)
+```
+
+```{r, echo = TRUE}
+y <- matrix(data_individ$Resultat, ncol = 1)
+X <- model.matrix(Resultat ~ Alder + Kon + Utbildare, 
+                  data = data_individ)
+```
+
+---
+
+**Uppgift 1:**
+
+Bestäm AIC för modellen med hjälp av dina funktioner från tidigare uppgifter och kontrollera att Rs värde ovan är korrekt.
+
+---
+
+
+## En Bayesiansk analys
+
+I denna del av uppgiften skall ni implementera en Metropolis-Hastings algoritm som används för att simulera från aposteriorifördelningen för $\boldsymbol{\theta}=(\theta_{intercept}, \theta_{ålder}, \theta_{kön}, \theta_{utbildare})$. Som apriorifördelning skall ni anta att $\boldsymbol{\theta}\sim N(\boldsymbol{0}, 100\boldsymbol{I})$, där $\boldsymbol{I}$ är en enhetsmatris. För mer om teorin bakom Bayesiansk statistik och MCMC rekommenderas kurserna [Bayesianska metoder (MT7003)](https://sisu.it.su.se/search/archive_info/MT7003) och [Beräkningsintensiva statistiska metoder (MT7024)](https://sisu.it.su.se/search/archive_info/MT7024) som båda planeras ges under HT17.
+
+---
+
+**Uppgift 2:**
+
+Skriv en funktion `post <- function(theta, y, X){...}` som bestämmer tätheten för aposteriorifördelningen (upp till en multiplikativ konstant) i punkten `theta` givet indata som i tidigare delar.
+
+```{r, echo = FALSE}
+post <- function(theta, y, X){
+    p.out <- L(theta, y, X) * prod(dnorm(theta, 0, sd = 10))
+    return(p.out)
+}
+```
+
+Som kontroll kan ni beräkna
+```{r, echo = TRUE}
+post(c(0.1, -0.03, 0.3, 0.9), y , X) / post(c(0.15, -0.035, 0.35, 0.95), y , X)
+```
+
+
+**Uppgift 3:**
+
+Implementera en Metropolis-Hastings algoritm (se [slide 22](https://dl.dropboxusercontent.com/u/94971628/MT5003.HT16/Kap6.html#22) i bildspel från Kapitel 6 och eventuellt lärobokens 8.4) som givet ett startvärde simulerar från aposteriorifördelningen för $\boldsymbol{\theta}$. Som startvärde kan ni t.ex. använda ML-skattningen $\hat{\theta}$, då behöver ni inte oroa er för algoritmens konvergens mot den stationära fördelningen (kan antas vara omedelbar).
+
+Använd algoritmen för att simulera (minst) 10000 vektorer $\boldsymbol{\theta}$ från aposteriorifördelningen. Motsvarigheten till  `sigma` (steglängden) från [slide 22](https://dl.dropboxusercontent.com/u/94971628/MT5003.HT16/Kap6.html#22) kan ni låta vara vektorn med motsvarande ML-skattares standardfel från den frekventistiska analysen.
+
+* Plotta dragningarna för varje parameter (motsvarande [slide 23](https://dl.dropboxusercontent.com/u/94971628/MT5003.HT16/Kap6.html#23)).
+
+* Plotta histogram över de marginella aposteriorifördelningarna (motsvarande [slide 24](https://dl.dropboxusercontent.com/u/94971628/MT5003.HT16/Kap6.html#24)).
+
+* Använd dragningarna för att approximera aposteriorimedelvärden och 95% kredibilitetsintervall (med hjälp av `quantile`) för de tre parametrarna. Jämför med motsvarande frekventistiska resultat (som kontroll borde resultaten inte skilja sig så mycket).
+
+
+**Uppgift 4**
+
+```{r}
+m_i <- numeric(nrow(data_individ))
+p <- numeric(nrow(data_individ))
+e <- numeric(nrow(data_individ))
+m <- numeric(nrow(data_individ))
+for (i in 1:5){
+    for (k in 1:nrow(data_individ)){
+        m_i[k] <- glm(Resultat ~ poly(Alder, i) + Kon + Utbildare, 
+                      data = data_individ[-k, ],
+                      family = "binomial")
+        p[k] <- predict.glm(m_i[k],newdata = data_individ[k, ], type = "response")
+        e[k] <- (data_individ$Resultat[k]-p[k])^2
+    }
+    m[i] <- mean(e)
+}
+```
+
+
+---
+
+

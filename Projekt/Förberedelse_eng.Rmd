@@ -1,0 +1,31 @@
+---
+title: "Loading data"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+
+In the project you will be working with data from the Swedish Transport Admnistration consisting of the driving part of the test for obtaining a Swedish driving licence, performed in Sollantuna during 2014. Data is available for all individuals under the age of 50 taking the test, but you will only use a random sample of 1000 individuals. For each individual, you have access to explanatory variables *sex*, *age* and *educator* (whether the individual trained privately ("Privatist") or in a driving school ("Trafikskola")) and the result of the test (`TRUE` for success).
+
+Start by creating a new R-project ("New Project..." in RStudio's file menu), you are advised to use the same project for all three parts of the project. Install the package `RCurl` with `install.packages("RCurl")` and run the following code (requires an internet connection) in order to download, subsample and save data. Don't forget to change the random seed (`set.seed`) to your date of birth.
+
+
+```{r, message=FALSE}
+library(RCurl)
+set.seed(990101) #Change 990101 to your date of birth
+länk <- "https://raw.githubusercontent.com/mskoldSU/MT5003_HT17/master/Projekt/proj_data.csv"
+data_individ <- read.csv(text = getURL(länk))
+idx <- sample(1:nrow(data_individ), 1000)
+data_individ <- data_individ[idx, ]
+save(data_individ, file = "proj_data.Rdata")
+```
+
+Check the result by printing the first few rows, they should look like below but with different values.
+
+```{r}
+head(data_individ)
+```
+

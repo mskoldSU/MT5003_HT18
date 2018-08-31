@@ -1,0 +1,75 @@
+---
+title: "Del III: Bayesiansk statistik och lite modellval."
+output: html_document
+---
+
+```{r, code = readLines("funktioner.R"), echo = FALSE}
+```
+
+I den här uppgiften kommer vi göra en Bayesiansk analys av vår logistiska regressionsmodell, men först en sista kontrollräkning av Rs modellutskrift:
+
+```{r, echo = TRUE}
+load("proj_data.Rdata")
+modell <- glm(Resultat ~ Alder + Kon + Utbildare, 
+              data = data_individ,
+              family = "binomial")
+summary(modell)
+```
+
+```{r, echo = FALSE}
+y <- matrix(data_individ$Resultat, ncol = 1)
+X <- model.matrix(Resultat ~ Alder + Kon + Utbildare, 
+                  data = data_individ)
+```
+
+---
+
+**Uppgift 1:**
+
+Bestäm AIC för modellen med hjälp av dina funktioner från tidigare uppgifter och kontrollera att Rs värde ovan är korrekt, bestäm även motsvarande uttryck baserat på "leave-one-out"-korsvalidering (läroboken (7.9)).
+
+---
+
+
+## En Bayesiansk analys
+
+I denna del av uppgiften skall ni implementera en Metropolis-Hastings algoritm som används för att simulera från aposteriorifördelningen för $\boldsymbol{\theta}=(\theta_{intercept}, \theta_{ålder}, \theta_{kön}, \theta_{utbildare})$. Som apriorifördelning skall ni anta att $\boldsymbol{\theta}\sim N(\boldsymbol{0}, 100\boldsymbol{I})$, där $\boldsymbol{I}$ är en enhetsmatris. 
+
+---
+
+**Uppgift 2:**
+
+Skriv en funktion `post <- function(theta, y, X){...}` som bestämmer tätheten för aposteriorifördelningen (upp till en multiplikativ konstant) i punkten `theta` givet indata som i tidigare delar.
+
+```{r, echo = FALSE}
+post <- function(theta, y, X){
+    p.out <- L(theta, y, X) * prod(dnorm(theta, 0, sd = 10))
+    return(p.out)
+}
+```
+
+Som kontroll kan ni beräkna
+```{r, echo = TRUE}
+Xtest <- cbind(1, 18:25, rep(c(0, 1), 4), rep(c(1, 1, 0, 0), 2))
+ytest <- c(rep(TRUE, 4), rep(FALSE, 4))
+post(c(260, -10, 10, -20), ytest, Xtest) / post(c(270, -15, 15, -25), ytest , Xtest)
+```
+
+
+**Uppgift 3:**
+
+Implementera en Metropolis-Hastings algoritm (se [slide 21](https://rawgit.com/mskoldSU/MT5003_HT17/master/Slides/Kap6.html#21) i bildspel från Kapitel 6 och eventuellt lärobokens 8.4) som givet ett startvärde simulerar från aposteriorifördelningen för $\boldsymbol{\theta}$. Som startvärde kan ni t.ex. använda ML-skattningen $\hat{\theta}$, då behöver ni inte oroa er för algoritmens konvergens mot den stationära fördelningen (kan antas vara omedelbar).
+
+Använd algoritmen för att simulera (minst) 10000 vektorer $\boldsymbol{\theta}$ från aposteriorifördelningen. Motsvarigheten till  `sigma` (steglängden) från exemplet på [slide 22](https://rawgit.com/mskoldSU/MT5003_HT17/master/Slides/Kap6.html#22) kan ni låta vara vektorn med motsvarande ML-skattares standardfel från den frekventistiska analysen.
+
+* Plotta dragningarna för varje parameter (motsvarande [slide 23](https://rawgit.com/mskoldSU/MT5003_HT17/master/Slides/Kap6.html#23)).
+
+* Plotta histogram över de marginella aposteriorifördelningarna (motsvarande [slide 24](https://rawgit.com/mskoldSU/MT5003_HT17/master/Slides/Kap6.html#24)).
+
+* Använd dragningarna för att approximera aposteriorimedelvärden och 95% kredibilitetsintervall (med hjälp av `quantile`) för de fyra parametrarna. Jämför med motsvarande frekventistiska resultat (som kontroll borde resultaten inte skilja sig så mycket).
+
+* Låt $Y^{*}$ beteckna resultatet av en framtida uppkörning med kovariater $x^{*}$. Då gäller att $P(Y^{*}=1|y)=E(p(x^{*})|y)$. Använd detta för att approximera $P(Y^{*}=1|y)$ då $\tilde{x}$ motsvarar en privatist av ditt eget kön och ålder.
+
+---
+
+

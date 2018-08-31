@@ -1,0 +1,29 @@
+---
+title: "Inläsning av data"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+Du kommer i projektet arbeta med data från trafikverket bestående av uppkörningar för B-körkort 2014 i Sollentuna. Data finns för samtliga uppkörningar gjorda av individer yngre än 50 år, du kommer dock endast använda ett slumpmässigt stickprov om 1000 uppkörningar. För varje uppkörning finns uppgift om provtagarens kön, ålder, utbildare (privatist eller trafikskola) och uppkörningens resultat (`TRUE` för godkänd).
+
+Börja med att skapa ett nytt R-projekt ("New Project..." i RStudios filmeny), det är lämpligt att använda samma projekt för alla delarna. Installera paketet `RCurl` med `install.packages("RCurl")` och kör sedan följande kod (kräver internetanslutning) för att ladda ner, dra ett stickprov och spara data. Glöm inte byta slumpfrö (`set.seed`) så att du får ditt eget personliga stickprov.
+
+```{r, message=FALSE}
+library(RCurl)
+set.seed(990101) #Byt 990101 mot ditt födelsedatum
+länk <- "https://raw.githubusercontent.com/mskoldSU/MT5003_HT17/master/Projekt/proj_data.csv"
+data_individ <- read.csv(text = getURL(länk))
+idx <- sample(1:nrow(data_individ), 1000)
+data_individ <- data_individ[idx, ]
+save(data_individ, file = "proj_data.Rdata")
+```
+
+Kontrollera genom att skriva ut de första raderna, strukturen skall vara samma men värdena annorlunda.
+
+```{r}
+head(data_individ)
+```
+

@@ -1,0 +1,113 @@
+---
+title: "Part I: Likelihood, numerical optimization and the Bootstrap"
+output: html_document
+---
+
+
+### Logistic regression
+
+In this assignment we will work with a regression model for binomially distributed data, a so called logistic regression model. The primary objective is not to make a full analysis of data, but rather to illustrate some methods introduced in the course. The model type is studied in more detail within the course Categorical Data Analysis (MT5006).
+
+We consider independent realisations of stochastic variables taking values 0 or 1. In general, observing 1 corresponds to a "successful" trial while observing 0 is a "failure". For each trial we have also observed a number of explanatory variables, and the main goal is to investigate how these variables affect the probability of a success.
+
+More formally, we have observed $(y_1, x_1),\ldots,(y_N, x_N)$, where $y_i$ is a realisation of $Y_i\sim Bernoulli(p_i)$ and we are interested in how the probabilities $p_i=p(x_i)$ depend on vectors of explanatory variables $X_i$. Since $p(x_i)$ is a probability, using a linear function $x_i\theta$ is problematic since it is not constrained to the unit interval. Instead we transform the linear function using the so called logistic, and let 
+
+
+$$
+p(x_i)=\frac{1}{1+\exp(-x_i\theta)},
+$$
+
+where $\theta=(\theta_1,\ldots,\theta_k)^T$ and $x_i=(x_{i,1}, \ldots, x_{i,k})$. In general we want the model to include an intercept, such that $x_{i,1}=1$ for all $i$. 
+
+
+---
+
+**Task 1:**
+
+In this first task you should code a number of functions in R. They should be coded in an external script file `funktioner.R`, rather than  within your R-Markdown document. This makes them easily re-used in forthcoming tasks. In R-Markdown you then write
+
+    `r ''````{r, code = readLines("funktioner.R")}
+    ```
+to run the script.
+
+**a)** The score vector and Fisher information matrix (both observed and expected) for the logistic regression are given in matrix-form as
+
+
+$$
+S(\theta)=X^T(y-p)\quad \text{and} \quad I(\theta)=X^TDX,
+$$
+where $y=(y_1,\ldots,y_N)^T$ is our realisation of $Y$, $X$ an $N\times k$-matrix with $x_i$ on row $i$, $p=(p_1,\ldots,p_N)^T$ and finally $D$ a diagonal matrix with diagonal $v=(v_1,\ldots,v_N)^T$, where $v_i=p_i(1-p_i)$, $i=1, \ldots, n$.
+
+
+Write functions `L <- function(theta, y, X){...}`, `l <- function(theta, y, X){...}`, `S <- function(theta, y, X){...}` and `I <- function(theta, y, X){...}` that computes likelihood, log likelihood, score and information for a logistic regression model given values for $\theta$, $y$ and $X$. Note that matrix multiplication in R is denoted with  `%*%` as in `I <- t(X) %*% D %*% X`. 
+Further, a diagonal matrix with diagonal `x` is obtained by `diag(as.vector(x))`. You may use Rs `dbinom` in functions `L` and `l`.
+
+
+**b)** The likelihood can not be maximized analytically, and we need a numerical method to compute the ML-estimates. Write a function `NR <- function(theta0, niter, y, X){...}` that applies Newton-Raphson´s algorithm in order to compute the ML-estimates in a logistic regression model (see e.g. the textbook, page 356, and note that Fisher´s information matrix is the *negative* Hessian). Given a starting value `theta0`
+the function should perform `niter` iterations of the algorithm and provide a numerical value (vector) for the ML-estimate as output. The function should make full use of the functions for score and information coded in the previous task. 
+
+---
+
+### Data
+
+We will use our logistic regression to model the probability of successfully passing the driving pert of the test for obtaining a driving license in Sweden. Start by loading the data created in the preparatory task
+
+```{r}
+load("proj_data.Rdata")
+```
+
+A model with all explanatory variables is fitted in R by
+
+```{r}
+modell <- glm(Resultat ~ Alder + Kon + Utbildare, 
+              data = data_individ,
+              family = "binomial")
+```
+
+R here automatically introduce dummy variables for sex ("Kon") and educator ("Utbildare"), with woman ("Kvinna") and private ("Privatist") as base levels. A summary of the fit is given by
+
+```{r}
+summary(modell)
+```
+
+As a considerable part of this course is about how to compute the values provieded in the above output, we will compute some of them manually.
+
+We start by defining $y$ and $X$ by
+```{r}
+y <- matrix(data_individ$Resultat, ncol = 1)
+X <- model.matrix(Resultat ~ Alder + Kon + Utbildare, 
+                  data = data_individ)
+```
+
+Make sure you understand the relation between the top rows of $X$,
+```{r}
+head(X)
+```
+
+and the corresponding rows in data
+
+```{r}
+head(data_individ[, -1])
+```
+
+
+---
+
+**Task 2:**
+
+Verify your function `NR` from task 1 by re-computing the parameter estimates provided by R (R actually uses the same type of algorithm). If you supply starting value  `theta0 = c(0, 0, 0, 0)`, how many iterations (`niter`) is needed in order to re-compute Rs estimates with two digits of accuracy?
+
+
+---
+
+**Task 3:**
+
+An approximation of the ML-estimates standard errors is given by taking the square root of the diagonal elements of the observed Fisher information matrix $I(\hat{\theta})$ (see grey box in textbook on page 128, the inverse of a matrix `A` is given by `solve(A)`). Compare this with the `Std. Error` R provides in the summary, does it seem like R is using this method?
+
+---
+
+**Uppgift 4:**
+
+Approximate the standard above errors by instead using parametric Boothstrap (see the textbook page 69 for the distinction between parametric and non-parametric Bootstrap, you should re-sample the values of the $y$-vector for a fix matrix $X$ of explanatory variables) and compare with the values in task 3. You should also construct a Bootstrap 95% confidence interval for the probability that someone of your own age and sex is successful. You may not us functionality provided by Rs `boot`-library in this task.
+
+---

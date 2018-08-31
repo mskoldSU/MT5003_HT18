@@ -1,0 +1,111 @@
+---
+title: "Del I: Likelihood, numerisk optimering och Bootstrap"
+output: html_document
+---
+
+
+### Logistisk regression
+
+I denna uppgift kommer vi arbeta med en modell för regression med binomialfördelade data, en så kallad logistisk regressionsmodell. Det primära syftet är inte att göra en fullständig analys av data, utan vi är mest intresserade av att prova några metoder som introduceras i kursen Statistisk inferensteori (MT5003). För den intresserade behandlas modelltypen i mer detalj i kursen Analys av kategoridata (MT5006).
+
+Grundmodellen är en modell för oberoende realiseringar av stokastiska variabler som antar värden 0 eller 1. Här tänker vi oss i allmänhet att värdet 1 betecknar ett "lyckat" försök och 0 ett "misslyckat". För varje försök har vi även en uppsättning förklarande variabler och syftet med analysen är att studera hur dessa påverkar sannolikheten för ett lyckat försök. 
+
+
+Formellt har vi således observationer $(y_1, x_1),\ldots,(y_N, x_N)$, där $y_i$ är en realisering av $Y_i\sim Bernoulli(p_i)$ och vi intresserar oss för hur sannolikheterna $p_i=p(x_i)$ beror på vektorer av förklarande variabler $x_i$. Eftersom $p(x_i)$ är en sannolikhet är det mindre lämpligt att använda en linjär funktion $x_i\theta$, som kan anta värden utanför enhetsintervallet. Istället transformerar vi den linjära funktionen genom den s.k. logistiska funktionen och låter
+
+$$
+p(x_i)=\frac{1}{1+\exp(-x_i\theta)},
+$$
+
+där $\theta=(\theta_1,\ldots,\theta_k)^T$ och $x_i=(x_{i,1}, \ldots, x_{i,k})$. I allmänhet vill vi att modellen innehåller ett intercept så att $x_{i,1}=1$ för alla $i$. 
+
+
+---
+
+**Uppgift 1:**
+
+I denna första deluppgift skall du koda ett antal funktioner i R. För att de enkelt skall kunna återanvändas i senare delar skall de skrivas i en extern fil `funktioner.R` istället för direkt i ditt Markdown-dokument. I Markdown skriver du sedan
+
+    `r ''````{r, code = readLines("funktioner.R")}
+    ```
+för att läsa in koden.
+
+**a)** Score-vektor och Fisher-informationsmatris (både förväntad och observerad) för den logistiska regressionsmodellen antar relativt enkla uttryck, skrivna på matrisform som
+$$
+S(\theta)=X^T(y-p)\quad \text{och} \quad I(\theta)=X^TDX,
+$$
+där $y=(y_1,\ldots,y_N)^T$ är vår realisering av $Y$, $X$ en $N\times k$-matris med $x_i$ på rad $i$, $p=(p_1,\ldots,p_N)^T$ och slutligen $D$ en diagonalmatris med diagonal $v=(v_1,\ldots,v_N)^T$ där $v_i=p_i(1-p_i)$, $i=1, \ldots, n$.
+
+
+Skriv funktioner `L <- function(theta, y, X){...}`, `l <- function(theta, y, X){...}`, `S <- function(theta, y, X){...}` och `I <- function(theta, y, X){...}` som bestämmer likelihood, log-likelihood, score och information för en logistisk regressionsmodell givet  värden på $\theta$, $y$ och $X$. Tänk på att matrismultiplikation i R anges med `%*%` som i `I <- t(X) %*% D %*% X`, vidare fås en diagonalmatris med diagonalen `x` genom `diag(as.vector(x))`. Det går bra att använda Rs `dbinom` i funktionerna `L` och `l`.
+
+
+**b)** Likelihoodfunktionen för den logistiska regressionsmodellen kan inte maximeras analytiskt och vi behöver därför en numerisk metod för att bestämma ML-skattningarna. Skriv en funktion `NR <- function(theta0, niter, y, X){...}` som använder Newton-Raphsons algoritm för att numeriskt bestämma ML-skattningarna i en logistisk regressionsmodell (se t.ex. läroboken sid. 356, tänk på att Fishers informationsmatris är *negativa* Hessianen). Givet ett startvärde `theta0` skall algoritmen itereras `niter` gånger och ge ett numerisk värde på ML-skattaren som utdata. Funktionen skall utnyttja de funktioner för scorevektor och informationsmatris du konstruerade i förra uppgiften.
+
+---
+
+### Data
+
+Vi kommer använda logistisk regression för att modellera sannolikheten för en lyckad uppkörning. Börja med att läsa in det datamaterial du skapade i förberedelseuppgiften
+
+```{r}
+load("proj_data.Rdata")
+```
+
+
+En modell med alla förklarande variabler anpassas i R med
+
+```{r}
+modell <- glm(Resultat ~ Alder + Kon + Utbildare, 
+              data = data_individ,
+              family = "binomial")
+```
+
+R inför här dummy-variabler för kön och utbildare, med Kvinna respektive Privatist som basnivå.
+En sammanfattning av modellanpassningen ges av
+
+```{r}
+summary(modell)
+```
+
+Då en stor del kursen handlar om hur man kan bestämma storheter som de R redovisar ovan kommer vi bestämma några av dessa manuellt.
+
+
+För aktuell modell och datamaterial fås $y$ och $X$ genom
+```{r}
+y <- matrix(data_individ$Resultat, ncol = 1)
+X <- model.matrix(Resultat ~ Alder + Kon + Utbildare, 
+                  data = data_individ)
+```
+
+Försäkra dig att du förstår kopplingen mellan de första raderna i matrisen $X$,
+```{r}
+head(X)
+```
+
+och motsvarande rader i datamaterialet
+
+```{r}
+head(data_individ[, -1])
+```
+
+
+---
+
+**Uppgift 2:**
+
+Verifiera att din funktion `NR` från uppgift 1 fungerar genom att återskapa Rs parameterskattningar (som ju bestäms med samma typ av algoritm). Om du använder startvärdet `theta0 = c(0, 0, 0, 0)`, hur många iterationer (`niter`) behövs för att återskapa Rs skattningar med två siffrors noggrannhet?
+
+---
+
+**Uppgift 3:**
+
+En uppskattning av ML-skattarnas standardfel fås genom att ta kvadratroten av diagonalelementen i inversen av den observerade Fisherinformationsmatrisen $I(\hat{\theta})$ (se grå box i kursboken på sid 128, inversen av en matris `A` ges av `solve(A)`). Jämför denna uppskattning med de värden på `Std. Error` R anger i modellutskriften, verkar det som R använder denna metod?
+
+---
+
+**Uppgift 4:**
+
+Uppskatta standardavvikelserna hos ML-skattarna av $\theta$ med parametrisk Bootstrap (se läroboken sid. 69 för skillnaden mellan parametrisk och icke-parametrisk bootstrap, du skall återsampla $y$-vektorns värden för en fix matris $X$ av kovariater) och jämför med de som ges i föregående uppgift. Bilda även ett Bootstrap-baserat 95% konfidensintervall för sannolikheten att en privatist med din egen ålder och kön klarar en uppkörning. Funktionalitet från paketet `boot` skall inte användas i denna uppgift.
+
+---

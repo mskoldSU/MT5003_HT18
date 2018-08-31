@@ -1,0 +1,90 @@
+---
+title: "Del II: Score-, Wald- och likelihoodkvot-tester."
+output: html_document
+---
+Del II består av fyra deluppgifter. Inled svaret på varje uppgift genom att formulera frågeställningen med egna ord och avsluta genom att kommentera eventuella slutsatser som kan dras av resultatet.
+
+Vi kommer här fortsätta återskapa delar av Rs utskrift från den logistiska regressionsmodellen.
+
+```{r, echo = TRUE}
+load("proj_data.Rdata")
+modell <- glm(Resultat ~ Alder + Kon + Utbildare, 
+              data = data_individ,
+              family = "binomial")
+summary(modell)
+```
+
+
+Till vår hjälp kommer vi använda funktionerna från Del I som laddas med
+
+```{r, echo = TRUE}
+source("funktioner.R")
+```
+
+vi bestämmer även $y$ och $X$ som tidigare
+
+```{r, echo = TRUE}
+y <- matrix(data_individ$Resultat, ncol = 1)
+X <- model.matrix(Resultat ~ Alder + Kon + Utbildare, 
+                  data = data_individ)
+```
+
+
+---
+
+**Uppgift 1:**
+
+Verifiera att utskriftens `z value`-kolumn är Wald-statistikor (se läroboken sid. 128) med hjälp av funktionerna `I` och `NR` från Del I.
+
+---
+
+
+## Likelihoodkvoter och profiler
+
+Antag nu, som i lärobokens kapitel 5.3, att vår parametervektor kan delas upp i två komponenter $(\boldsymbol{\theta}, \boldsymbol{\eta})$. För att utföra likelihoodkvot-tester av typen $H_0:\boldsymbol{\theta}=\boldsymbol{\theta}_0$ och bestämma profil-likelihood behöver vi kunna maximera funktionen $\boldsymbol{\eta}\mapsto L(\boldsymbol{\theta}, \boldsymbol{\eta})$ för fixa värden på $\boldsymbol{\theta}$. I vår regressionsmodell är detta särskilt enkelt då $\boldsymbol{\theta}_0=\boldsymbol{0}$; att en eller flera parametrar är noll svarar ju mot att motsvarande kovariater inte tas med i modellen. Om vi t.ex. låter $\boldsymbol{\theta}=\theta_{Kon}$ och $\boldsymbol{\eta}=(\theta_{intercept}, \theta_{Alder}, \theta_{Utbildare})$, kan vi bestämma ML-skattningen av  $\boldsymbol{\eta}$ givet att variabeln kön inte ingår i modellen (d.v.s. $\theta_{Kon}=0$) genom att helt enkelt ta bort motsvarande kolumn i matrisen $X$ (ny matris blir `X[, -3]`) och sedan köra `NR` från första inlämningsuppgiften:
+
+```{r}
+eta <- NR(theta0 = c(0, 0, 0), niter = 10, y = y, X = X[, -3])
+eta
+```
+
+---
+
+**Uppgift 2:**
+
+Bestäm de generaliserade likelihood-kvot statistikor (lärobokens kapitel 5.5) som svarar mot Wald-statistikorna i Uppgift 1 och bestäm motsvarande $P$-värden. Tänk på att dina likelihood-kvot statistikor bör vara i samma storleksordning som de *kvadrerade* Wald-statistikorna (varför?).
+
+---
+
+
+**Uppgift 3:**
+
+Precis som likelihoodkvot-statistikan kan score-statistikan generaliseras till fallet med "nuisance"-parametrar $\eta$. Den generaliserade score-statistikan blir då
+$$
+T_S(\boldsymbol{\theta}_0)=S(\boldsymbol{\theta}_0,\hat{\boldsymbol{\eta}}_{ML}(\boldsymbol{\theta}_0))^T
+I(\boldsymbol{\theta}_0,\hat{\boldsymbol{\eta}}_{ML}(\boldsymbol{\theta}_0))^{-1}S(\boldsymbol{\theta}_0,\hat{\boldsymbol{\eta}}_{ML}(\boldsymbol{\theta}_0))
+$$
+med en asymptotisk $\chi^2(q)$-fördelning (beteckningar följer lärobokens kapitel 5.5). En fördel med denna är att ML-skattaren endast behöver bestämmas under $H_0$. Bestäm ML-skattaren av $\boldsymbol{\eta}=(\theta_{Alder}, \theta_{Utbildare})$ under $H_0:\boldsymbol{\theta}=(\theta_{intercept},\theta_{Kon})=(0, 0)$ och använd för att bestämma ett $P$-värde baserat på generaliserade score-statistikan (en modell utan intercept blir lite konstig i detta fall, så interceptet bör nog vara kvar oavsett eventuell signifikans).
+
+---
+
+
+Vill vi maximera $\boldsymbol{\eta}\mapsto L(\boldsymbol{\theta}, \boldsymbol{\eta})$ för fixt $\boldsymbol{\theta}\neq \boldsymbol{0}$ behöver vi modifiera funktionen `NR`, här gör vi det istället enkelt för oss genom att använda Rs `glm`-funktion med ett s.k. *offset*. En offsetvariabel är en variabel $o_i$ som adderas till den linjära komponenten $x_i\theta$ utan lutningskoefficient. För den logistiska regressionen med offset $o_i$ blir då $p(x_i)=(1+\exp(-x_i\theta+o_i))$.
+
+
+
+
+**Uppgift 4:**
+
+Bestäm profil-likelihoodens värden (lärobokens definition 5.4) för parametern $\theta_{Kon}$, $L_p(\theta_{Kon})$, över en grid av parametervärden. Använd detta för att plotta $L_p$ 
+i en figur tillsammans med motsvarande skattade likelihood (lärobokens definition 5.5). För att bestämma $\hat{\eta}_{ML}(\theta_{Kon})$ kan du t.ex. använda `glm.fit`-funktionen med extra offset genom anropet
+```{r,eval=TRUE}
+theta.Kon <- 0.5 # exempelvärde
+profil <- glm.fit(x = X[, -3], y = y,
+                  offset = theta.Kon * X[, 3],
+                  family = binomial())
+profil$coeff
+```
+som ger ML-skattningar hos övriga koefficienter då $\theta_{Kon}=0.5$ (som ett exempelvärde). Bestäm ett 95%-igt konfidensintervall baserat på profil-likelihooden visuellt ur figuren genom att dra en horisontell linje  på lämplig nivå (jfr Figur 5.3b i läroboken). Valet av nivå skall motiveras och intervallet jämföras med motsvarande Wald-intervall.
+
+
