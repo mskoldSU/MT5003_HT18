@@ -1,0 +1,95 @@
+---
+title: "Part II: Score-, Wald- and likelihood ratio tests."
+output: html_document
+---
+
+Part II consists of four tasks. Initiate the answer for each task by writing the problem statement in your own words and finish by briefly discussing the results.
+
+We will continue re-creating part of R's output from the logistic regression model.
+
+```{r, echo = TRUE}
+load("proj_data.Rdata")
+modell <- glm(Resultat ~ Alder + Kon + Utbildare, 
+              data = data_individ,
+              family = "binomial")
+summary(modell)
+```
+
+The functions from part I should be loaded with
+
+
+```{r, echo = TRUE}
+source("funktioner.R")
+```
+
+and we assign $y$ and $X$ as before
+
+```{r, echo = TRUE}
+y <- matrix(data_individ$Resultat, ncol = 1)
+X <- model.matrix(Resultat ~ Alder + Kon + Utbildare, 
+                  data = data_individ)
+```
+
+
+---
+
+**Task 1:**
+
+Verify, using functions `I` and `NR` from Part I, that the `z value` column of the output are Wald statistics (see the textbook page 128).
+
+
+---
+
+## Likelihood ratios and profiles
+
+Now assume, as in the textbook chapter 5.3, that our parameter vector can be divided into two components $(\boldsymbol{\theta}, \boldsymbol{\eta})$. In order to perform likelihood ratio tests of the type $H_0:\boldsymbol{\theta}=\boldsymbol{\theta}_0$ and determine the profile likelihood we need to maximize the function $\boldsymbol{\eta}\mapsto L(\boldsymbol{\theta}, \boldsymbol{\eta})$ given fixed values $\boldsymbol{\theta}$. In our model this is simple when $\boldsymbol{\theta}_0=\boldsymbol{0}$; that one or several parameters equal zero is equivalent to the corresponding explanatory variables not being part of the model. If we for example let $\boldsymbol{\theta}=\theta_{Kon}$ and $\boldsymbol{\eta}=(\theta_{intercept}, \theta_{Alder}, \theta_{Utbildare})$, we can compute  $\boldsymbol{\eta}$ given that variable "kön" (sex) is not part of the model (i.e. $\theta_{Kon}=0$) by simply removing the corresponding column of $X$ (the new matrix will be `X[, -3]`) and then pass this to function `NR`:
+
+
+```{r}
+eta <- NR(theta0 = c(0, 0, 0), niter = 10, y = y, X = X[, -3])
+eta
+```
+
+---
+
+**Task 2:**
+
+Compute the generalized likelihood ratio statistics (see textbook chapter 5.5) that corresponds to the Wald statistics in Task 1 and determine the corresponding $P$-values. Note that your likelihood ratio statistics should be of the same order of magnitude as the *squared* Wald statistics (why?).
+
+
+
+**Task 3:**
+
+The score statistic can, like the likelihood ratio statistic, be generalized to the case with a nuisance parameter $\eta$. The generalized score statistic is
+
+$$
+T_S(\boldsymbol{\theta}_0)=S(\boldsymbol{\theta}_0,\hat{\boldsymbol{\eta}}_{ML}(\boldsymbol{\theta}_0))^T
+I(\boldsymbol{\theta}_0,\hat{\boldsymbol{\eta}}_{ML}(\boldsymbol{\theta}_0))^{-1}S(\boldsymbol{\theta}_0,\hat{\boldsymbol{\eta}}_{ML}(\boldsymbol{\theta}_0))
+$$
+with an asymptotic $\chi^2(q)$ distribution (notation followingthe textbook chapter 5.5). An advantage of this statistic is thet the ML-estimate only needs to be computed under the null hypothesis. Compute the ML estimate of $\boldsymbol{\eta}=(\theta_{Alder}, \theta_{Utbildare})$ under $H_0:\boldsymbol{\theta}=(\theta_{intercept},\theta_{Kon})=(0, 0)$ and use this to determine a $P$-value based on the generalized score statistic (a model without intercept is somewhat weird for this case, so the intercept should be included regardless of its significance).
+
+---
+
+
+If we want to maximize $\boldsymbol{\eta}\mapsto L(\boldsymbol{\theta}, \boldsymbol{\eta})$ for a fix $\boldsymbol{\theta}\neq \boldsymbol{0}$ the function `NR` needs to be modified. Instead of doing so, we use R's `glm` function with a so called *offset*. An offset is a variable $o_i$ that is added to the linear component $x_i\theta$ without a coefficient. For the logistic regression with offset $o_i$ we then get
+ $p(x_i)=(1+\exp(-x_i\theta+o_i))$.
+
+
+
+
+**Task 4:**
+
+Compute the profile likelihood (textbook definition 5.4) for parameter $\theta_{Kon}$, $L_p(\theta_{Kon})$, on a suitable grid of parameter values. Use these to graph $L_p$ together with the corresponding estimated likelihood (textbook definition 5.5). In order to determine $\hat{\eta}_{ML}(\theta_{Kon})$ you may for example use the `glm.fit` function with an extra offset as in
+t
+```{r,eval=TRUE}
+theta.Kon <- 0.5 # example value
+profil <- glm.fit(x = X[, -3], y = y,
+                  offset = theta.Kon * X[, 3],
+                  family = binomial())
+profil$coeff
+```
+
+which gives estimates of the other coefficients when  $\theta_{Kon}=0.5$ (as an example value). Decide a 95% confidence interval based on the profile likelihood visually from the figure by drawing a horizontal line at a suitable level (c.f. Figure 5.3b in the textbook). The choice of level should be motivated and the result compared with the corresponding Wald interval.
+
+
+
