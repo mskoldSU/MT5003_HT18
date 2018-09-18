@@ -1,0 +1,80 @@
+---
+title: "Part III: Bayesian statistics and some model choice"
+output: html_document
+---
+
+```{r, code = readLines("funktioner.R"), echo = FALSE}
+```
+
+In this assignment we will perform a Bayesian analysis of the logistic regression model, but first a final check of R's output:
+
+```{r, echo = TRUE}
+load("proj_data.Rdata")
+modell <- glm(Resultat ~ Alder + Kon + Utbildare, 
+              data = data_individ,
+              family = "binomial")
+summary(modell)
+```
+
+```{r, echo = FALSE}
+y <- matrix(data_individ$Resultat, ncol = 1)
+X <- model.matrix(Resultat ~ Alder + Kon + Utbildare, 
+                  data = data_individ)
+```
+
+---
+
+**Task 1:**
+
+Compute AIC for the model using functions from previous assignment and make sure it agrees with R's value. You should also compute the corresponding value based on leave-one-out cross validation (see textbook (7.9)).
+
+---
+
+
+## A Bayesian analysis
+
+
+In this part you will implement a [Metropolis-Hastings algorithm](https://en.wikipedia.org/wiki/Metropolis%E2%80%93Hastings_algorithm) that samples (approximately) from the posterior distribution of the parameter vector.
+ $\boldsymbol{\theta}=(\theta_{intercept}, \theta_{?lder}, \theta_{k?n}, \theta_{utbildare})$. You should use a vague prior, $\boldsymbol{\theta}\sim N(\boldsymbol{0}, 100\boldsymbol{I})$, where $\boldsymbol{I}$  is an identity matrix.
+ 
+
+---
+
+**Task 2:**
+
+Write a function `post <- function(theta, y, X){...}` that evaluates the posterior density (up to a multiplicative constant) at `theta`, given `y` and `X` as in previous assignments.
+
+
+```{r, echo = FALSE}
+post <- function(theta, y, X){
+    p.out <- L(theta, y, X) * prod(dnorm(theta, 0, sd = 10))
+    return(p.out)
+}
+```
+
+If correct, your function should give the same answer as in this code:
+```{r, echo = TRUE}
+Xtest <- cbind(1, 18:25, rep(c(0, 1), 4), rep(c(1, 1, 0, 0), 2))
+ytest <- c(rep(TRUE, 4), rep(FALSE, 4))
+post(c(260, -10, 10, -20), ytest, Xtest) / post(c(270, -15, 15, -25), ytest , Xtest)
+```
+
+
+**Task 3:**
+
+Implement a Metropolis-Hastings algorithm (c.f. code in [slide 22](https://rawgit.com/mskoldSU/MT5003_HT17/master/Slides/Kap6.html#22) and the textbook 8.4) that given a starting value, simulates from the posterior distribution of $\boldsymbol{\theta}$. As starting value you may for example us the ML estimate $\hat{\theta}$, in that case you need not worry about convergence to the stationary distribution (can be assumed immediate).
+
+Use the algorithm to sample (at least) 10000 vectors $\boldsymbol{\theta}$ from the posterior. A suitable choice of `sigma` (the step-size) is the vector of ML-estimator standard errors.
+
+* Plot the draws for each parameter (corresponding to [slide 23](https://rawgit.com/mskoldSU/MT5003_HT17/master/Slides/Kap6.html#23))
+
+* Plot histograms of the parameter posteriors (corresponding to [slide 24](https://rawgit.com/mskoldSU/MT5003_HT17/master/Slides/Kap6.html#24)).
+
+* Use the samples to approximate posterior means and 95% credibility intervals (using ´quantile´) for the parameters. Compare with the results of the frequentist analysis (as a check, the results should be similar).
+
+* Let $Y^{*}$ denote the result of a future test with explanatory variables $x^{*}$. Then we can write the probability of a pass as $P(Y^{*}=1|y)=E(p(x^{*})|y)$. Use this to approximate $P(Y^{*}=1|y)$ when  $\tilde{x}$ corresponds to a privately educated subject of your own sex and age.
+
+
+---
+
+
