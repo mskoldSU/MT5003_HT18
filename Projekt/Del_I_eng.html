@@ -90,9 +90,6 @@ img {
 .tabbed-pane {
   padding-top: 12px;
 }
-.html-widget {
-  margin-bottom: 20px;
-}
 button.code-folding-btn:focus {
   outline: none;
 }
@@ -145,7 +142,7 @@ p(x_i)=\frac{1}{1+\exp(-x_i\theta)},
 S(\theta)=X^T(y-p)\quad \text{and} \quad I(\theta)=X^TDX,
 \]</span> where <span class="math inline">\(y=(y_1,\ldots,y_N)^T\)</span> is our realisation of <span class="math inline">\(Y\)</span>, <span class="math inline">\(X\)</span> an <span class="math inline">\(N\times k\)</span>-matrix with <span class="math inline">\(x_i\)</span> on row <span class="math inline">\(i\)</span>, <span class="math inline">\(p=(p_1,\ldots,p_N)^T\)</span> and finally <span class="math inline">\(D\)</span> a diagonal matrix with diagonal <span class="math inline">\(v=(v_1,\ldots,v_N)^T\)</span>, where <span class="math inline">\(v_i=p_i(1-p_i)\)</span>, <span class="math inline">\(i=1, \ldots, n\)</span>.</p>
 <p>Write functions <code>L &lt;- function(theta, y, X){...}</code>, <code>l &lt;- function(theta, y, X){...}</code>, <code>S &lt;- function(theta, y, X){...}</code> and <code>I &lt;- function(theta, y, X){...}</code> that computes likelihood, log likelihood, score and information for a logistic regression model given values for <span class="math inline">\(\theta\)</span>, <span class="math inline">\(y\)</span> and <span class="math inline">\(X\)</span>. Note that matrix multiplication in R is denoted with <code>%*%</code> as in <code>I &lt;- t(X) %*% D %*% X</code>. Further, a diagonal matrix with diagonal <code>x</code> is obtained by <code>diag(as.vector(x))</code>. You may use Rs <code>dbinom</code> in functions <code>L</code> and <code>l</code>.</p>
-<p><strong>b)</strong> The likelihood can not be maximized analytically, and we need a numerical method to compute the ML-estimates. Write a function <code>NR &lt;- function(theta0, niter, y, X){...}</code> that applies Newton-Raphson´s algorithm in order to compute the ML-estimates in a logistic regression model (see e.g. the textbook, page 356, and note that Fisher´s information matrix is the <em>negative</em> Hessian). Given a starting value <code>theta0</code> the function should perform <code>niter</code> iterations of the algorithm and provide a numerical value (vector) for the ML-estimate as output. The function should make full use of the functions for score and information coded in the previous task.</p>
+<p><strong>b)</strong> The likelihood can not be maximized analytically, and we need a numerical method to compute the ML-estimates. Write a function <code>NR &lt;- function(theta0, niter, y, X){...}</code> that applies Newton-Raphson?s algorithm in order to compute the ML-estimates in a logistic regression model (see e.g. the textbook, page 356, and note that Fisher?s information matrix is the <em>negative</em> Hessian). Given a starting value <code>theta0</code> the function should perform <code>niter</code> iterations of the algorithm and provide a numerical value (vector) for the ML-estimate as output. The function should make full use of the functions for score and information coded in the previous task.</p>
 <hr />
 </div>
 <div id="data" class="section level3">
@@ -211,10 +208,10 @@ X &lt;- model.matrix(Resultat ~ Alder + Kon + Utbildare,
 <p>Verify your function <code>NR</code> from task 1 by re-computing the parameter estimates provided by R (R actually uses the same type of algorithm). If you supply starting value <code>theta0 = c(0, 0, 0, 0)</code>, how many iterations (<code>niter</code>) is needed in order to re-compute Rs estimates with two digits of accuracy?</p>
 <hr />
 <p><strong>Task 3:</strong></p>
-<p>An approximation of the ML-estimates standard errors is given by taking the square root of the diagonal elements of the observed Fisher information matrix <span class="math inline">\(I(\hat{\theta})\)</span> (see grey box in textbook on page 128, the inverse of a matrix <code>A</code> is given by <code>solve(A)</code>). Compare this with the <code>Std. Error</code> R provides in the summary, does it seem like R is using this method?</p>
+<p>An approximation of the ML-estimates standard errors is given by taking the square root of the diagonal elements of the inverse of the observed Fisher information matrix <span class="math inline">\(I(\hat{\theta})\)</span> (see grey box in textbook on page 128, the inverse of a matrix <code>A</code> is given by <code>solve(A)</code>). Compare this with the <code>Std. Error</code> R provides in the summary, does it seem like R is using this method?</p>
 <hr />
 <p><strong>Uppgift 4:</strong></p>
-<p>Approximate the standard above errors by instead using parametric Boothstrap (see the textbook page 69 for the distinction between parametric and non-parametric Bootstrap, you should re-sample the values of the <span class="math inline">\(y\)</span>-vector for a fix matrix <span class="math inline">\(X\)</span> of explanatory variables) and compare with the values in task 3. You should also construct a Bootstrap 95% confidence interval for the probability that someone of your own age and sex is successful. You may not us functionality provided by Rs <code>boot</code>-library in this task.</p>
+<p>Approximate the standard above errors by instead using parametric Boothstrap (see the textbook page 69 for the distinction between parametric and non-parametric Bootstrap, you should re-sample the values of the <span class="math inline">\(y\)</span>-vector for a fix matrix <span class="math inline">\(X\)</span> of explanatory variables) and compare with the values in task 3. You should also construct a Bootstrap 95% confidence interval for the probability that someone privately educated of your own age and sex is successful. You may not use functionality provided by Rs <code>boot</code>-library in this task.</p>
 <hr />
 </div>
 

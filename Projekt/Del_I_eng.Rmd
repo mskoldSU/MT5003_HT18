@@ -43,7 +43,7 @@ Write functions `L <- function(theta, y, X){...}`, `l <- function(theta, y, X){.
 Further, a diagonal matrix with diagonal `x` is obtained by `diag(as.vector(x))`. You may use Rs `dbinom` in functions `L` and `l`.
 
 
-**b)** The likelihood can not be maximized analytically, and we need a numerical method to compute the ML-estimates. Write a function `NR <- function(theta0, niter, y, X){...}` that applies Newton-Raphson´s algorithm in order to compute the ML-estimates in a logistic regression model (see e.g. the textbook, page 356, and note that Fisher´s information matrix is the *negative* Hessian). Given a starting value `theta0`
+**b)** The likelihood can not be maximized analytically, and we need a numerical method to compute the ML-estimates. Write a function `NR <- function(theta0, niter, y, X){...}` that applies Newton-Raphson?s algorithm in order to compute the ML-estimates in a logistic regression model (see e.g. the textbook, page 356, and note that Fisher?s information matrix is the *negative* Hessian). Given a starting value `theta0`
 the function should perform `niter` iterations of the algorithm and provide a numerical value (vector) for the ML-estimate as output. The function should make full use of the functions for score and information coded in the previous task. 
 
 ---
@@ -102,12 +102,12 @@ Verify your function `NR` from task 1 by re-computing the parameter estimates pr
 
 **Task 3:**
 
-An approximation of the ML-estimates standard errors is given by taking the square root of the diagonal elements of the observed Fisher information matrix $I(\hat{\theta})$ (see grey box in textbook on page 128, the inverse of a matrix `A` is given by `solve(A)`). Compare this with the `Std. Error` R provides in the summary, does it seem like R is using this method?
+An approximation of the ML-estimates standard errors is given by taking the square root of the diagonal elements of the inverse of the observed Fisher information matrix $I(\hat{\theta})$ (see grey box in textbook on page 128, the inverse of a matrix `A` is given by `solve(A)`). Compare this with the `Std. Error` R provides in the summary, does it seem like R is using this method?
 
 ---
 
 **Uppgift 4:**
 
-Approximate the standard above errors by instead using parametric Boothstrap (see the textbook page 69 for the distinction between parametric and non-parametric Bootstrap, you should re-sample the values of the $y$-vector for a fix matrix $X$ of explanatory variables) and compare with the values in task 3. You should also construct a Bootstrap 95% confidence interval for the probability that someone of your own age and sex is successful. You may not us functionality provided by Rs `boot`-library in this task.
+Approximate the standard above errors by instead using parametric Boothstrap (see the textbook page 69 for the distinction between parametric and non-parametric Bootstrap, you should re-sample the values of the $y$-vector for a fix matrix $X$ of explanatory variables) and compare with the values in task 3. You should also construct a Bootstrap 95% confidence interval for the probability that someone privately educated of your own age and sex is successful. You may not use functionality provided by Rs `boot`-library in this task.
 
 ---
